@@ -2,7 +2,7 @@
 
 import os
 
-from flask import Blueprint, jsonify, render_template, request, Response
+from flask import Blueprint, current_app, jsonify, render_template, request, Response, send_from_directory
 
 from .calendar_utils import make_ics, google_calendar_url
 from .models import get_db, get_all_data
@@ -13,6 +13,13 @@ bp = Blueprint("main", __name__)
 @bp.route("/")
 def index():
     return render_template("index.html")
+
+
+@bp.route("/sw.js")
+def service_worker():
+    resp = send_from_directory(current_app.static_folder, "sw.js")
+    resp.headers["Service-Worker-Allowed"] = "/"
+    return resp
 
 
 @bp.route("/api/data")

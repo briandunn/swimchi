@@ -1,6 +1,8 @@
 {
   "name": "SwimChi",
   "short_name": "SwimChi",
+  "start_url": "/",
+  "scope": "/",
   "icons": [
     {
       "src": "/static/android-chrome-192x192.png",

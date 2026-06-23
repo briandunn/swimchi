@@ -1,7 +1,6 @@
 // SwimChi - client-side filtering and rendering
 
 const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
-const DAYS_SHORT = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
 let appData = null;  // {facilities, slots, swim_types}
 let facilityMap = {};  // id → facility
@@ -44,7 +43,6 @@ function toggleFavorite(facilityId) {
 function saveFilters() {
   const state = {
     type: document.getElementById('filter-type').value,
-    day: document.getElementById('filter-day').value,
     pool: document.getElementById('filter-pool').value,
     distance: document.getElementById('filter-distance').value,
     favorites: document.getElementById('filter-favorites').checked,
@@ -58,7 +56,6 @@ function loadFilters() {
   try {
     const state = JSON.parse(raw);
     if (state.type) document.getElementById('filter-type').value = state.type;
-    if (state.day) document.getElementById('filter-day').value = state.day;
     if (state.pool) document.getElementById('filter-pool').value = state.pool;
     if (state.distance) document.getElementById('filter-distance').value = state.distance;
     if (state.favorites) document.getElementById('filter-favorites').checked = true;
@@ -67,7 +64,7 @@ function loadFilters() {
 
 // Haversine distance in miles
 function haversine(lat1, lon1, lat2, lon2) {
-  const R = 3959; // Earth radius in miles
+  const R = 3959;
   const dLat = (lat2 - lat1) * Math.PI / 180;
   const dLon = (lon2 - lon1) * Math.PI / 180;
   const a = Math.sin(dLat / 2) ** 2 +
@@ -87,11 +84,20 @@ function calendarParams(slot) {
   return `facility_id=${slot.facility_id}&day=${slot.day_of_week}&start=${encodeURIComponent(slot.start_time)}&type=${encodeURIComponent(slot.swim_type)}`;
 }
 
+// Local ISO date string (YYYY-MM-DD) using local time, not UTC
+function localIso(date) {
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+}
+
+// Convert JS getDay() (0=Sun) to app day_of_week (0=Mon)
+function jsDayToAppDay(jsDay) {
+  return (jsDay + 6) % 7;
+}
+
 function render() {
   if (!appData) return;
 
   const filterType = document.getElementById('filter-type').value;
-  const filterDay = document.getElementById('filter-day').value;
   const filterPool = document.getElementById('filter-pool').value;
   const filterDistance = document.getElementById('filter-distance').value;
   const filterFavorites = document.getElementById('filter-favorites').checked;
@@ -99,87 +105,112 @@ function render() {
 
   saveFilters();
 
-  // Filter slots
-  let filtered = appData.slots.filter(slot => {
-    if (filterType && slot.swim_type !== filterType) return false;
-    if (filterDay !== '' && slot.day_of_week !== parseInt(filterDay)) return false;
-    if (filterPool && slot.facility_id !== parseInt(filterPool)) return false;
-    if (filterFavorites && !favorites.includes(slot.facility_id)) return false;
+  const now = new Date();
+  const nowMinutes = now.getHours() * 60 + now.getMinutes();
 
-    // Distance filter
-    if (filterDistance && userLat !== null) {
-      const fac = facilityMap[slot.facility_id];
-      if (fac && fac.lat && fac.lon) {
-        const dist = haversine(userLat, userLon, fac.lat, fac.lon);
-        if (dist > parseFloat(filterDistance)) return false;
-      } else {
-        return false; // No coordinates, exclude when distance filter is active
-      }
-    }
-
-    return true;
-  });
-
-  // Sort by day, then time, then facility name
-  filtered.sort((a, b) => {
-    if (a.day_of_week !== b.day_of_week) return a.day_of_week - b.day_of_week;
-    if (a.start_time !== b.start_time) return a.start_time.localeCompare(b.start_time);
-    const nameA = (facilityMap[a.facility_id] || {}).name || '';
-    const nameB = (facilityMap[b.facility_id] || {}).name || '';
-    return nameA.localeCompare(nameB);
-  });
-
-  // Group by day
-  const grouped = {};
-  for (const slot of filtered) {
-    const day = slot.day_of_week;
-    if (!grouped[day]) grouped[day] = [];
-    grouped[day].push(slot);
+  // Build next 7 calendar days starting today
+  const upcomingDays = [];
+  for (let i = 0; i < 7; i++) {
+    const d = new Date(now);
+    d.setHours(0, 0, 0, 0);
+    d.setDate(d.getDate() + i);
+    upcomingDays.push(d);
   }
 
   const container = document.getElementById('schedule');
-
-  if (filtered.length === 0) {
-    container.innerHTML = '<p class="empty">No swim sessions match your filters.</p>';
-    return;
-  }
-
   let html = '';
-  for (let day = 0; day < 7; day++) {
-    const slots = grouped[day];
-    if (!slots) continue;
+  let totalShown = 0;
 
-    html += `<div class="day-group"><h2>${DAYS[day]}</h2><div class="slots">`;
-    for (const slot of slots) {
+  for (const dayDate of upcomingDays) {
+    const dayOfWeek = jsDayToAppDay(dayDate.getDay());
+    const isoDate = localIso(dayDate);
+    const isToday = isoDate === localIso(now);
+
+    const daySlots = appData.slots.filter(slot => {
+      if (slot.day_of_week !== dayOfWeek) return false;
+      if (filterType && slot.swim_type !== filterType) return false;
+      if (filterPool && slot.facility_id !== parseInt(filterPool)) return false;
+      if (filterFavorites && !favorites.includes(slot.facility_id)) return false;
+
+      if (filterDistance && userLat !== null) {
+        const fac = facilityMap[slot.facility_id];
+        if (fac && fac.lat && fac.lon) {
+          if (haversine(userLat, userLon, fac.lat, fac.lon) > parseFloat(filterDistance)) return false;
+        } else {
+          return false;
+        }
+      }
+
+      // Exclude if outside this facility's schedule date range
+      const fac = facilityMap[slot.facility_id];
+      if (fac) {
+        if (fac.schedule_date_start && isoDate < fac.schedule_date_start) return false;
+        if (fac.schedule_date_end && isoDate > fac.schedule_date_end) return false;
+      }
+
+      return true;
+    });
+
+    daySlots.sort((a, b) => {
+      if (a.start_time !== b.start_time) return a.start_time.localeCompare(b.start_time);
+      const nameA = (facilityMap[a.facility_id] || {}).name || '';
+      const nameB = (facilityMap[b.facility_id] || {}).name || '';
+      return nameA.localeCompare(nameB);
+    });
+
+    if (daySlots.length === 0) continue;
+    totalShown += daySlots.length;
+
+    const dayLabel = isToday ? 'Today' : DAYS[dayOfWeek];
+    const dateLabel = dayDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+
+    html += `<div class="mb-6">
+      <h2 class="text-lg font-semibold text-brand border-b-2 border-brand pb-1 mb-2">
+        ${dayLabel} <span class="text-gray-400 font-normal text-base">— ${dateLabel}</span>
+      </h2>`;
+
+    for (const slot of daySlots) {
       const fac = facilityMap[slot.facility_id] || {};
       const isFav = favorites.includes(slot.facility_id);
+
+      const slotStartMinutes = parseInt(slot.start_time.split(':')[0]) * 60 + parseInt(slot.start_time.split(':')[1]);
+      const isElapsed = isToday && slotStartMinutes < nowMinutes;
+
       let distStr = '';
       if (userLat !== null && fac.lat && fac.lon) {
         const dist = haversine(userLat, userLon, fac.lat, fac.lon);
-        distStr = `<span class="distance">${dist.toFixed(1)} mi</span>`;
+        distStr = `<span class="text-xs text-gray-400 whitespace-nowrap">${dist.toFixed(1)} mi</span>`;
       }
 
       const params = calendarParams(slot);
+      const favColor = isFav ? 'text-amber-400' : 'text-gray-300';
+      const elapsedClass = isElapsed ? 'opacity-40' : '';
+
       html += `
-        <div class="slot">
-          <div class="slot-main">
-            <span class="slot-time">${formatTime12(slot.start_time)}-${formatTime12(slot.end_time)}</span>
-            <a class="slot-pool" href="https://www.chicagoparkdistrict.com/parks-facilities/${fac.slug}" target="_blank">${fac.name || 'Unknown'}</a>
+        <div class="bg-white rounded-lg px-3 py-2.5 mb-1.5 shadow-sm flex flex-wrap sm:flex-nowrap justify-between items-start sm:items-center gap-2 ${elapsedClass}">
+          <div class="flex items-center gap-2 flex-wrap min-w-0">
+            <span class="font-semibold text-sm whitespace-nowrap w-28">${formatTime12(slot.start_time)}–${formatTime12(slot.end_time)}</span>
+            <a class="text-sm text-gray-700 hover:underline hover:text-brand min-w-0" href="https://www.chicagoparkdistrict.com/parks-facilities/${fac.slug}" target="_blank">${fac.name || 'Unknown'}</a>
             ${distStr}
-            <span class="slot-type">${slot.swim_type}</span>
-            <button class="fav-btn${isFav ? ' is-fav' : ''}" data-fid="${slot.facility_id}" title="${isFav ? 'Remove from favorites' : 'Add to favorites'}">${isFav ? '\u2605' : '\u2606'}</button>
+            <span class="text-xs bg-blue-50 text-brand px-2 py-0.5 rounded-full whitespace-nowrap">${slot.swim_type}</span>
+            <button class="fav-btn text-xl leading-none cursor-pointer bg-transparent border-0 p-0 ${favColor}" data-fid="${slot.facility_id}" title="${isFav ? 'Remove from favorites' : 'Add to favorites'}">${isFav ? '★' : '☆'}</button>
           </div>
-          <div class="slot-actions">
-            <a href="/api/calendar/ics?${params}" class="cal-link" title="Download .ics">iCal</a>
-            <a href="#" class="cal-link gcal-link" data-params="${params}" title="Add to Google Calendar">GCal</a>
+          <div class="flex gap-1.5 shrink-0 self-end sm:self-auto">
+            <a href="/api/calendar/ics?${params}" class="text-xs text-brand border border-brand px-1.5 py-0.5 rounded whitespace-nowrap hover:bg-brand hover:text-white transition-colors" title="Download .ics">iCal</a>
+            <a href="#" class="gcal-link text-xs text-brand border border-brand px-1.5 py-0.5 rounded whitespace-nowrap hover:bg-brand hover:text-white transition-colors" data-params="${params}" title="Add to Google Calendar">GCal</a>
           </div>
         </div>`;
     }
-    html += '</div></div>';
+    html += '</div>';
   }
+
+  if (totalShown === 0) {
+    container.innerHTML = '<p class="text-center text-gray-400 py-8 text-lg">No swim sessions match your filters.</p>';
+    return;
+  }
+
   container.innerHTML = html;
 
-  // Attach event listeners
   for (const btn of container.querySelectorAll('.fav-btn')) {
     btn.addEventListener('click', () => toggleFavorite(parseInt(btn.dataset.fid)));
   }
@@ -194,15 +225,20 @@ function render() {
 }
 
 async function init() {
-  const resp = await fetch('/api/data');
+  let resp;
+  try {
+    resp = await fetch('/api/data');
+  } catch (e) {
+    document.getElementById('schedule').innerHTML =
+      '<p class="text-center text-gray-400 py-8 text-lg">You\'re offline. Cached schedules may be shown once the page reloads with cached data.</p>';
+    return;
+  }
   appData = await resp.json();
 
-  // Build facility map
   for (const fac of appData.facilities) {
     facilityMap[fac.id] = fac;
   }
 
-  // Populate swim type filter
   const typeSelect = document.getElementById('filter-type');
   for (const t of appData.swim_types) {
     const opt = document.createElement('option');
@@ -211,7 +247,6 @@ async function init() {
     typeSelect.appendChild(opt);
   }
 
-  // Populate pool filter
   const poolSelect = document.getElementById('filter-pool');
   for (const fac of appData.facilities) {
     const opt = document.createElement('option');
@@ -222,13 +257,11 @@ async function init() {
 
   loadFilters();
 
-  // Filter event listeners
-  for (const id of ['filter-type', 'filter-day', 'filter-pool', 'filter-distance']) {
+  for (const id of ['filter-type', 'filter-pool', 'filter-distance']) {
     document.getElementById(id).addEventListener('change', render);
   }
   document.getElementById('filter-favorites').addEventListener('change', render);
 
-  // Geolocation
   document.getElementById('btn-locate').addEventListener('click', () => {
     const status = document.getElementById('location-status');
     status.textContent = 'Locating...';
@@ -240,13 +273,17 @@ async function init() {
         document.getElementById('distance-row').hidden = false;
         render();
       },
-      (err) => {
+      () => {
         status.textContent = 'Location denied';
       }
     );
   });
 
   render();
+}
+
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('/sw.js');
 }
 
 init();
