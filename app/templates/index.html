@@ -3,64 +3,74 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>SwimChi - Chicago Pool Schedules</title>
+  <title>SwimChi — Chicago Pool Schedules</title>
   <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='favicon.ico') }}">
   <link rel="icon" type="image/png" sizes="32x32" href="{{ url_for('static', filename='favicon-32x32.png') }}">
   <link rel="icon" type="image/png" sizes="16x16" href="{{ url_for('static', filename='favicon-16x16.png') }}">
   <link rel="apple-touch-icon" sizes="180x180" href="{{ url_for('static', filename='apple-touch-icon.png') }}">
   <link rel="manifest" href="{{ url_for('static', filename='site.webmanifest') }}">
   <meta name="theme-color" content="#0057b7">
-  <script>
-    tailwind = { config: { theme: { extend: { colors: { brand: '#0057b7', 'brand-dark': '#004494' } } } } }
-  </script>
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body class="bg-gray-100 text-gray-900 max-w-4xl mx-auto px-4 leading-normal">
+<body class="bg-[#f0f7ff] text-slate-900 min-h-screen">
 
-  <header class="text-center py-6 pb-4">
-    <h1 class="text-3xl font-bold text-brand">SwimChi</h1>
-    <p class="text-gray-500 text-sm mt-1">Chicago Park District Pool Schedules</p>
+  <header class="bg-[#0057b7]">
+    <div class="max-w-3xl mx-auto px-4 py-5">
+      <h1 class="text-2xl font-black tracking-tight text-white leading-none">SwimChi</h1>
+      <p class="text-blue-200 text-sm mt-1">Chicago Park District pool schedules</p>
+    </div>
   </header>
 
-  <div id="filters" class="bg-white rounded-lg p-4 mb-6 shadow-sm flex flex-col sm:flex-row sm:flex-wrap gap-3 sm:items-center">
-    <div class="flex items-center gap-2 w-full sm:w-auto">
-      <label for="filter-type" class="text-sm font-semibold text-gray-600 whitespace-nowrap">Swim Type</label>
-      <select id="filter-type" class="flex-1 min-w-0 text-sm border border-gray-300 rounded px-2 py-1.5 bg-white">
-        <option value="">All Types</option>
-      </select>
-    </div>
-    <div class="flex items-center gap-2 w-full sm:w-auto">
-      <label for="filter-pool" class="text-sm font-semibold text-gray-600 whitespace-nowrap">Pool</label>
-      <select id="filter-pool" class="flex-1 min-w-0 text-sm border border-gray-300 rounded px-2 py-1.5 bg-white">
-        <option value="">All Pools</option>
-      </select>
-    </div>
-    <div class="flex items-center gap-2 w-full sm:w-auto">
-      <button id="btn-locate" type="button" class="px-3 py-1.5 text-sm bg-brand text-white border border-brand rounded cursor-pointer hover:bg-brand-dark transition-colors">Use My Location</button>
-      <span id="location-status" class="text-xs text-gray-500"></span>
-    </div>
-    <div class="flex items-center gap-2 w-full sm:w-auto" id="distance-row" hidden>
-      <label for="filter-distance" class="text-sm font-semibold text-gray-600 whitespace-nowrap">Max Distance</label>
-      <select id="filter-distance" class="flex-1 min-w-0 text-sm border border-gray-300 rounded px-2 py-1.5 bg-white">
-        <option value="">Any</option>
-        <option value="1">1 mile</option>
-        <option value="2">2 miles</option>
-        <option value="3" selected>3 miles</option>
-        <option value="5">5 miles</option>
-        <option value="10">10 miles</option>
-      </select>
-    </div>
-    <div class="flex items-center gap-2 w-full sm:w-auto">
-      <label class="flex items-center gap-1.5 text-sm font-semibold text-gray-600 cursor-pointer select-none">
-        <input type="checkbox" id="filter-favorites"> Favorites only
+  <div class="sticky top-0 z-20 bg-white shadow-sm border-b border-slate-100">
+    <div id="filters" class="max-w-3xl mx-auto px-4 py-3 flex flex-col sm:flex-row sm:flex-wrap gap-2 sm:items-center">
+
+      <div class="flex items-center gap-2 w-full sm:w-auto">
+        <label for="filter-type" class="text-[10px] font-bold text-slate-400 uppercase tracking-widest whitespace-nowrap">Type</label>
+        <select id="filter-type" class="flex-1 min-w-0 text-sm border border-slate-200 rounded-lg px-2.5 py-1.5 bg-white text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#0057b7] focus:border-transparent">
+          <option value="">All</option>
+        </select>
+      </div>
+
+      <div class="flex items-center gap-2 w-full sm:w-auto">
+        <label for="filter-pool" class="text-[10px] font-bold text-slate-400 uppercase tracking-widest whitespace-nowrap">Pool</label>
+        <select id="filter-pool" class="flex-1 min-w-0 text-sm border border-slate-200 rounded-lg px-2.5 py-1.5 bg-white text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#0057b7] focus:border-transparent">
+          <option value="">All</option>
+        </select>
+      </div>
+
+      <div class="flex items-center gap-2 flex-wrap w-full sm:w-auto">
+        <button id="btn-locate" type="button"
+                class="px-4 py-1.5 text-sm font-semibold bg-[#0057b7] text-white rounded-lg cursor-pointer hover:bg-[#003d8a] active:scale-[0.97] transition-all whitespace-nowrap">
+          Near me
+        </button>
+        <span id="location-status" class="text-xs text-slate-400"></span>
+        <div id="distance-row" hidden class="flex items-center gap-2">
+          <label for="filter-distance" class="text-[10px] font-bold text-slate-400 uppercase tracking-widest whitespace-nowrap">Within</label>
+          <select id="filter-distance" class="min-w-0 text-sm border border-slate-200 rounded-lg px-2.5 py-1.5 bg-white text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#0057b7] focus:border-transparent">
+            <option value="">Any</option>
+            <option value="1">1 mi</option>
+            <option value="2">2 mi</option>
+            <option value="3" selected>3 mi</option>
+            <option value="5">5 mi</option>
+            <option value="10">10 mi</option>
+          </select>
+        </div>
+      </div>
+
+      <label class="flex items-center gap-2 cursor-pointer select-none w-full sm:w-auto">
+        <input type="checkbox" id="filter-favorites" class="w-4 h-4 rounded accent-[#0057b7]">
+        <span class="text-sm text-slate-600 font-medium">Favorites</span>
       </label>
+
     </div>
   </div>
 
-  <div id="schedule"></div>
+  <main class="max-w-3xl mx-auto px-4 py-5">
+    <div id="schedule"></div>
+  </main>
 
-  <footer class="text-center py-8 text-gray-400 text-xs">
-    <p>Data from <a href="https://www.chicagoparkdistrict.com" target="_blank" class="text-brand hover:underline">Chicago Park District</a>.</p>
+  <footer class="max-w-3xl mx-auto px-4 pb-8 text-center">
+    <p class="text-slate-400 text-xs">Data from <a href="https://www.chicagoparkdistrict.com" target="_blank" class="text-[#0057b7] hover:underline">Chicago Park District</a>.</p>
   </footer>
 
   <script src="{{ url_for('static', filename='app.js') }}"></script>
