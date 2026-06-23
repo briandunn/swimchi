@@ -75,7 +75,7 @@ pytest
 docker compose up --build
 ```
 
-This starts gunicorn on port 8000 and sets up a daily cron job at 6am to refresh the data.
+On first launch, the entrypoint automatically runs a full data refresh (~2 min) before starting the server. Subsequent restarts skip this if the database already exists. A daily cron job at 6am keeps the data current.
 
 To protect the manual refresh endpoint, set a token:
 

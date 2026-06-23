@@ -1,9 +1,10 @@
 """SQLite database schema and query helpers."""
 
+import os
 import sqlite3
 from pathlib import Path
 
-DB_PATH = Path(__file__).parent.parent / "swimchi.db"
+DB_PATH = os.environ.get("SWIMCHI_DB", str(Path(__file__).parent.parent / "swimchi.db"))
 
 
 def get_db(path: str | Path | None = None) -> sqlite3.Connection:
