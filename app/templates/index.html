@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SwimChi - Chicago Pool Schedules</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='app.css') }}">
+</head>
+<body>
+  <header>
+    <h1>SwimChi</h1>
+    <p class="subtitle">Chicago Park District Pool Schedules</p>
+  </header>
+
+  <div id="filters">
+    <div class="filter-row">
+      <label for="filter-type">Swim Type</label>
+      <select id="filter-type">
+        <option value="">All Types</option>
+      </select>
+    </div>
+    <div class="filter-row">
+      <label for="filter-day">Day</label>
+      <select id="filter-day">
+        <option value="">All Days</option>
+        <option value="0">Monday</option>
+        <option value="1">Tuesday</option>
+        <option value="2">Wednesday</option>
+        <option value="3">Thursday</option>
+        <option value="4">Friday</option>
+        <option value="5">Saturday</option>
+        <option value="6">Sunday</option>
+      </select>
+    </div>
+    <div class="filter-row">
+      <label for="filter-pool">Pool</label>
+      <select id="filter-pool">
+        <option value="">All Pools</option>
+      </select>
+    </div>
+    <div class="filter-row">
+      <button id="btn-locate" type="button">Use My Location</button>
+      <span id="location-status"></span>
+    </div>
+    <div class="filter-row" id="distance-row" hidden>
+      <label for="filter-distance">Max Distance</label>
+      <select id="filter-distance">
+        <option value="">Any</option>
+        <option value="1">1 mile</option>
+        <option value="2">2 miles</option>
+        <option value="3" selected>3 miles</option>
+        <option value="5">5 miles</option>
+        <option value="10">10 miles</option>
+      </select>
+    </div>
+    <div class="filter-row">
+      <label>
+        <input type="checkbox" id="filter-favorites"> Favorites only
+      </label>
+    </div>
+  </div>
+
+  <div id="schedule"></div>
+
+  <footer>
+    <p>Data from <a href="https://www.chicagoparkdistrict.com" target="_blank">Chicago Park District</a>.</p>
+  </footer>
+
+  <script src="{{ url_for('static', filename='app.js') }}"></script>
+</body>
+</html>
