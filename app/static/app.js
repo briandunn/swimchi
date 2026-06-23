@@ -164,7 +164,7 @@ function render() {
         <div class="slot">
           <div class="slot-main">
             <span class="slot-time">${formatTime12(slot.start_time)}-${formatTime12(slot.end_time)}</span>
-            <span class="slot-pool">${fac.name || 'Unknown'}</span>
+            <a class="slot-pool" href="https://www.chicagoparkdistrict.com/parks-facilities/${fac.slug}" target="_blank">${fac.name || 'Unknown'}</a>
             ${distStr}
             <span class="slot-type">${slot.swim_type}</span>
             <button class="fav-btn${isFav ? ' is-fav' : ''}" data-fid="${slot.facility_id}" title="${isFav ? 'Remove from favorites' : 'Add to favorites'}">${isFav ? '\u2605' : '\u2606'}</button>

@@ -33,6 +33,11 @@ def test_parse_time_morning():
     assert parse_time("11:00-11:45am") == ("11:00", "11:45")
 
 
+def test_parse_time_noon_to_1pm():
+    """12:00-1:00PM is noon to 1pm, not midnight to 1pm."""
+    assert parse_time("12:00-1:00PM") == ("12:00", "13:00")
+
+
 def test_parse_time_individual_markers():
     """Abbott-style: each time has its own am/pm marker."""
     assert parse_time("11:00a-12:00p") == ("11:00", "12:00")

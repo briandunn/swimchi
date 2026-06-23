@@ -114,9 +114,15 @@ header h1 {
   min-width: 110px;
 }
 
-.slot-pool {
+a.slot-pool {
   font-size: 0.9rem;
   color: #333;
+  text-decoration: none;
+}
+
+a.slot-pool:hover {
+  text-decoration: underline;
+  color: #0057b7;
 }
 
 .slot-type {

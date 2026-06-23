@@ -69,8 +69,9 @@ def parse_time(raw: str) -> tuple[str, str] | None:
         # Shared suffix: "9-11am" or "1:00-2:45pm" or "11:15-1:15pm"
         start_num = int(start_s.split(":")[0]) if ":" in start_s else int(start_s)
         end_num = int(end_s.split(":")[0]) if ":" in end_s else int(end_s)
-        if end_period == "pm" and start_num > end_num and start_num >= 7:
+        if end_period == "pm" and start_num > end_num and start_num >= 7 and start_num != 12:
             # e.g., "11:15-1:15pm" → start is AM, end is PM
+            # But NOT "12:00-1:00pm" → both PM (12pm is noon, not midnight)
             start_period = "am"
         else:
             start_period = end_period
