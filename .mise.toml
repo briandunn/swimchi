@@ -1,2 +1,3 @@
 [tools]
+node = "latest"
 sqlite = "latest"

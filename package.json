@@ -1,0 +1,28 @@
+{
+  "name": "swimchi",
+  "version": "1.0.0",
+  "description": "A web app that scrapes all 82 Chicago Park District pool schedule PDFs, parses them into structured data, and presents a filterable UI for finding swim times.",
+  "main": "index.js",
+  "directories": {
+    "test": "tests"
+  },
+  "scripts": {
+    "build": "tailwindcss -i tailwind.input.css -o app/static/app.css --minify",
+    "watch": "tailwindcss -i tailwind.input.css -o app/static/app.css --watch"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/briandunn/swimchi.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/briandunn/swimchi/issues"
+  },
+  "homepage": "https://github.com/briandunn/swimchi#readme",
+  "devDependencies": {
+    "tailwindcss": "^3.4.19"
+  }
+}
