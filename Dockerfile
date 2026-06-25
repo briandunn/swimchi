@@ -12,7 +12,8 @@ COPY . .
 ENV SWIMCHI_DB=/app/data/swimchi.db
 
 # Set up daily cron job for data refresh at 6am
-RUN echo "0 6 * * * SWIMCHI_DB=/app/data/swimchi.db cd /app && python -m jobs.refresh >> /var/log/swimchi-refresh.log 2>&1" | crontab -
+RUN ln -sf /proc/1/fd/1 /var/log/swimchi-refresh.log
+RUN echo "0 6 * * * SWIMCHI_DB=/app/data/swimchi.db cd /app && /usr/local/bin/python -m jobs.refresh >> /var/log/swimchi-refresh.log 2>&1" | crontab -
 
 EXPOSE 8000
 
